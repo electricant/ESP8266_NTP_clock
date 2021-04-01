@@ -1,0 +1,43 @@
+
+
+   ---- Transcoding 'T:\Temp\wifi_lcd_clock_gerbers_importZIP\WiFi_LCD_clock-B_Paste.gbr' ----   Fri Mar 26 16:39:51 2021
+
+D14   --> D100
+D15   --> D101
+-----------------------------------------------------------------
+
+
+   ---- Transcoding 'T:\Temp\wifi_lcd_clock_gerbers_importZIP\WiFi_LCD_clock-B_SilkS.gbr' ----   Fri Mar 26 16:39:51 2021
+
+D14   --> D102
+D15   --> D103
+D16   --> D104
+-----------------------------------------------------------------
+
+
+   ---- Transcoding 'T:\Temp\wifi_lcd_clock_gerbers_importZIP\WiFi_LCD_clock-Edge_Cuts.gbr' ----   Fri Mar 26 16:39:51 2021
+
+D14   --> D105
+-----------------------------------------------------------------
+
+
+   ---- Transcoding 'T:\Temp\wifi_lcd_clock_gerbers_importZIP\WiFi_LCD_clock-F_Cu.gbr' ----   Fri Mar 26 16:39:51 2021
+
+D15   --> D106
+D16   --> D107
+D17   --> D108
+D18   --> D109
+D19   --> D110
+D20   --> D111
+D21   --> D112
+D22   --> D113
+D23   --> D114
+D24   --> D115
+D25   --> D116
+-----------------------------------------------------------------
+
+
+   ---- Transcoding 'T:\Temp\wifi_lcd_clock_gerbers_importZIP\WiFi_LCD_clock-F_SilkS.gbr' ----   Fri Mar 26 16:39:51 2021
+
+D14   --> D117
+-----------------------------------------------------------------
