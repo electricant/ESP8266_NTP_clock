@@ -15,7 +15,14 @@ open-ended project this list may grow. Never settle!
 
 ## Firmware
 
-**TODO**
+Required libraries:
+ * PubSubClient
+ * EasyNTPClient
+ * TimeLib
+ * ArduinoJson
+
+Known bugs:
+ * DST correction is not properly implemented. It just adds a fixed offset of 1h
 
 ## PCB/Mechanical assembly
 
