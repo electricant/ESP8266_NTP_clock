@@ -21,16 +21,15 @@
  * The task are repetitive and are run every rateMillis (more or less).
  */
 struct task_t {
-  time_t nextMillis; // next time in millis() the task should run
+  void (*taskFunc)(void); // the function to run
   time_t rateMillis; // the rate at which the task is run
-  void (*taskFunc)(void);
+  time_t lastRunMillis; // last time in millis() the task has been run
 };
 struct task_t tasks[SCHED_NUM_TASKS] = {0};
 
-#define sched_put_task(id, func, rate_ms, nextRun_ms) {\
+#define sched_put_task(id, func, rate_ms) {\
   tasks[id].taskFunc = func; \
   tasks[id].rateMillis = rate_ms; \
-  tasks[id].nextMillis = nextRun_ms; \
 } 
 
 // A UDP instance to let us send and receive packets over UDP
@@ -90,9 +89,9 @@ void setup() {
   mqttClient.setCallback(mqttSubCallback);
 
   // setup tasks
-  sched_put_task(0, &backlightTask, BACKLIGHT_UPDATE_MS, SCREEN_UPDATE_MS); // start deferred (update screen first)
-  sched_put_task(1, &screenUpdateTask, SCREEN_UPDATE_MS, 0); // start immediatelly
-  sched_put_task(2, &mqttLoopTask, MQTT_UPDATE_MS, 0);
+  sched_put_task(0, &backlightTask, BACKLIGHT_UPDATE_MS);
+  sched_put_task(1, &screenUpdateTask, SCREEN_UPDATE_MS);
+  sched_put_task(2, &mqttLoopTask, MQTT_UPDATE_MS);
   
   // done loading
   lcd.noBlink();
@@ -103,10 +102,10 @@ void loop() {
 
   for(size_t i = 0; i < SCHED_NUM_TASKS; i++)
   {
-    if ((entry_time >= tasks[i].nextMillis) && tasks[i].taskFunc)
+    if (tasks[i].taskFunc && (entry_time - tasks[i].lastRunMillis) >= tasks[i].rateMillis)
     {
+      tasks[i].lastRunMillis = millis();
       (*tasks[i].taskFunc)();
-      tasks[i].nextMillis = entry_time + tasks[i].rateMillis;
     }
   }
   
