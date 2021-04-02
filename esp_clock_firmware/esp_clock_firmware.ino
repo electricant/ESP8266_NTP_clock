@@ -8,7 +8,8 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <WiFiUdp.h>
-#include <EasyNTPClient.h>
+#include "EasyNTPClient/src/EasyNTPClient.h"
+#include "EasyNTPClient/src/EasyNTPClient.cpp"
 #include <TimeLib.h>
 #include <ArduinoJson.h>
 

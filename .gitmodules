@@ -1,0 +1,3 @@
+[submodule "esp_clock_firmware/EasyNTPClient"]
+	path = esp_clock_firmware/EasyNTPClient
+	url = git@github.com:electricant/EasyNTPClient.git

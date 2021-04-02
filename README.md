@@ -17,9 +17,11 @@ open-ended project this list may grow. Never settle!
 
 Required libraries:
  * PubSubClient
- * EasyNTPClient
  * TimeLib
  * ArduinoJson
+
+The code uses a local, improved version of the EasyNTPClient library. It is
+available as a git submodule.
 
 Known bugs:
  * DST correction is not properly implemented. It just adds a fixed offset of 1h
