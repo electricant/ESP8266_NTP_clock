@@ -13,25 +13,10 @@
 #include <TimeLib.h>
 #include <ArduinoJson.h>
 
+#include "qd_sched.h"
 #include "clock_display_d2x2.h"
 #include "d1_gpio_utils.h"
-#include "config.h"
-
-/**
- * Data structure that holds the tasks to run.
- * The task are repetitive and are run every rateMillis (more or less).
- */
-struct task_t {
-  void (*taskFunc)(void); // the function to run
-  time_t rateMillis; // the rate at which the task is run
-  time_t lastRunMillis; // last time in millis() the task has been run
-};
-struct task_t tasks[SCHED_NUM_TASKS] = {0};
-
-#define sched_put_task(id, func, rate_ms) {\
-  tasks[id].taskFunc = func; \
-  tasks[id].rateMillis = rate_ms; \
-} 
+#include "config/config.h"
 
 // A UDP instance to let us send and receive packets over UDP
 WiFiUDP udp;
@@ -50,7 +35,8 @@ float temperature, humidity;
 void setup() {
   // Light sleep can be used only if the WiFi is in STA mode
   WiFi.mode(WIFI_STA);
-
+  wifi_set_sleep_type(LIGHT_SLEEP_T);
+  
   // initialize serial port
   Serial.begin(115200);
   Serial.println();
@@ -90,30 +76,12 @@ void setup() {
   mqttClient.setCallback(mqttSubCallback);
 
   // setup tasks
-  sched_put_task(0, &backlightTask, BACKLIGHT_UPDATE_MS);
-  sched_put_task(1, &screenUpdateTask, SCREEN_UPDATE_MS);
-  sched_put_task(2, &mqttLoopTask, MQTT_UPDATE_MS);
+  sched_put_task(&backlightTask, BACKLIGHT_UPDATE_MS);
+  sched_put_task(&screenUpdateTask, SCREEN_UPDATE_MS);
+  sched_put_task(&mqttLoopTask, MQTT_UPDATE_MS);
   
   // done loading
   lcd.noBlink();
-}
-
-void loop() {
-  time_t entry_time = millis();
-
-  for(size_t i = 0; i < SCHED_NUM_TASKS; i++)
-  {
-    if (tasks[i].taskFunc && (entry_time - tasks[i].lastRunMillis) >= tasks[i].rateMillis)
-    {
-      tasks[i].lastRunMillis = millis();
-      (*tasks[i].taskFunc)();
-    }
-  }
-  
-  time_t elapsed_time = millis() - entry_time;
- 
-  // sleep until the next full tick
-  delay(SCHED_RATE_MS - (elapsed_time % SCHED_RATE_MS));
 }
 
 /**

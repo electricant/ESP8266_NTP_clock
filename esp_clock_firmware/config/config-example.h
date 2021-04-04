@@ -42,18 +42,8 @@
 #define ENABLE_DST
 
 /*
- * Scheduler and task-related configuration macros.
- * The scheduler is very basic: it decides which task to run every SCHED_RATE_MS.
- * It keeps track of the next run time of each task and if current millis() is greater than the task run time,
- * then the selected task is run. If no task has to be run the it sleeps until the next iteration.
- * So basically each task function is executed in a periodic fashion.
- * 
- * SCHED_NUM_TASKS controls the maximum number of tasks that can be allocated. In this case it should be leaved to the default,
- * since only three tasks are currently running.
+ * Task-related configuration macros.
  */
-#define SCHED_RATE_MS 100
-#define SCHED_NUM_TASKS 3
-
 // Update the screen contents once every this time (in milliseconds)
 #define SCREEN_UPDATE_MS 1000
 
