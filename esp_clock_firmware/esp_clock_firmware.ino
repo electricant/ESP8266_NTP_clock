@@ -16,6 +16,8 @@
 #include "qd_sched.h"
 #include "clock_display_d2x2.h"
 #include "d1_gpio_utils.h"
+#include "ash.h"
+#include "alogger.h"
 #include "config/config.h"
 
 // A UDP instance to let us send and receive packets over UDP
@@ -35,10 +37,11 @@ float temperature, humidity;
 void setup() {
   // Light sleep can be used only if the WiFi is in STA mode
   WiFi.mode(WIFI_STA);
-  wifi_set_sleep_type(LIGHT_SLEEP_T);
+  WiFi.setSleepMode(WIFI_LIGHT_SLEEP);
   
   // initialize serial port
   Serial.begin(115200);
+  while(!Serial) { }
   Serial.println();
 
   lcd_init();
@@ -62,7 +65,7 @@ void setup() {
     Serial.print(".");
   }
 
-  Serial.print("\n[Wifi] RSSI = ");
+  Serial.print("\n[Wifi] Connected. RSSI = ");
   Serial.print(WiFi.RSSI());
   Serial.println(" dBm");
   builtin_LED_off();
@@ -79,6 +82,7 @@ void setup() {
   sched_put_task(&backlightTask, BACKLIGHT_UPDATE_MS);
   sched_put_task(&screenUpdateTask, SCREEN_UPDATE_MS);
   sched_put_task(&mqttLoopTask, MQTT_UPDATE_MS);
+  sched_put_task(&ashTask, 1000);
   
   // done loading
   lcd.noBlink();
@@ -111,14 +115,47 @@ void screenUpdateTask() {
   int dst_offset = 0;
 
 #ifdef ENABLE_DST
-  /* compute daylight time offset: an hour should be added if date between:
-  // last Sunday of March 01:00UTC to last Sunday of October 01:00UTC
-  https://github.com/andydoro/DST_RTC
-  https://github.com/nseidle/Daylight_Savings_Time_Example/blob/master/Daylight_Savings_Time_Example.ino
-  */
-  dst_offset = 1;
+  /* compute daylight time offset. An hour should be added if date between:
+   * last Sunday of March 01:00UTC to last Sunday of October 01:00UTC
+   * 
+   * This algorithm is based on LUT. Let's ignore leap years for a moment.
+   * Since 365 % 7 = 1, given a reference date, the date for the following year goes back one day. 
+   * For example, the last sunday of march is: Sun 28 March 2021 -> Sun 27 March 2022.
+   * March and October have both 31 days. So, the last sunday can happen between the 25th and the 31st.
+   * Therefore, the date for the last sunday of March/October repeats every 7 years.
+   * 
+   * Leap years screw everything up. Since I don't expect this clock and/or this code to survive more
+   * than a century, I'm just assuming a leap year happens every 4 years (hi guys from the future,
+   * sorry I've been very shortsighted. Hopefully thanks to this explaination you can recompute
+   * the LUT and be safe for another 100 years or so). Taking this into account, the date repeats every
+   * 7*4 = 28 years. As a consequence, my LUT has 28 entries and starts from March 2021.
+   * 
+   * For october, it is just a matter of setting the reference year in such a way that we can reuse the 
+   * same LUT used for March. For this century we need a 20 year offset, so the reference year for October is 2001.
+   */
+  static const uint8_t dst_lut[] = {28,27,26,31,30,29,28,
+                                    26,25,31,30,28,27,26,
+                                    25,30,29,28,27,25,31,
+                                    30,29,27,26,25,31,29};
+  static const uint16_t mar_yr = 2021; // reference year for March (LUT start)
+  static const uint16_t oct_yr = 2001; // reference year for October
+
+  // get last sunday of March
+  uint8_t mar_ls = dst_lut[(year() - mar_yr)%sizeof(dst_lut)];
+  // and October
+  uint8_t oct_ls = dst_lut[(year() - oct_yr)%sizeof(dst_lut)];
+
+  if ((month() > 3) && (month() < 11))
+    dst_offset = 1;
+  else if ((month() == 3) && (day() >= mar_ls))
+    dst_offset = 1;
+  else if ((month() == 10) && (day() <= oct_ls))
+    dst_offset = 1;
 #endif 
 
+  if (((millis() / 1000)%60) == 0) // log once every minute
+    LOG_INFO("hour=%u dst_offset=%u minute=%u", hour(), dst_offset, minute());
+  
   lcd_print_time(hour() + dst_offset, minute());
   lcd_print_temp_humidity(temperature, humidity);
 }
@@ -131,15 +168,14 @@ void mqttLoopTask()
 {
   if (!mqttClient.connected())
   {
-    Serial.print("[MQTT] Attempting connection...");
-
+    LOG_INFO("Attempting connection...");
+    
     if (mqttClient.connect(MQTT_CLIENT_ID)) {
-      Serial.println(" Success.");
+      LOG_INFO("Connection successful.");
       // (re)subscribe to the required topics
       mqttClient.subscribe(MQTT_TOPIC);
     } else {
-      Serial.print(" Fail: rc=");
-      Serial.println(mqttClient.state());
+      LOG_INFO("Connection failed: rc=%i.", mqttClient.state());
     }
   }
 
@@ -155,23 +191,19 @@ time_t getNTPtime()
 
   builtin_LED_on();
 
-  Serial.print("[NTP] Querying ");
-  Serial.println(NTP_SERVER);
+  LOG_INFO("Querying %s", NTP_SERVER);
 
   curr_time = ntpClient.getUnixTime();
 
   // To check if the received time is valid, verify that
-  // we should be at least in 2020, otherwhise retry in 10s
+  // we should be at least in 2020, otherwhise retry in 15s
   if (curr_time <= 1577836800) {
     setSyncInterval(15);
-    Serial.print("[NTP] Wrong time: ");
-    Serial.print(curr_time);
-    Serial.println(". Aborting");
+    LOG_INFO("Wrong time: %lu. Retry in 15s.", curr_time);
     curr_time = now();  // the old time is better than a completely wrong one
   } else {
     setSyncInterval(NTP_SYNC_INTERVAL_M * 60);
-    Serial.print("[NTP] Time synchronized: ");
-    Serial.println(curr_time);
+    LOG_INFO("Time synchronized: %lu", curr_time);
   }
 
   builtin_LED_off();
@@ -193,12 +225,11 @@ void mqttSubCallback(char* topic, byte* payload, unsigned int len)
   
   snprintf(payload_str, len+1, "%s", payload);
   
-  Serial.print("[MQTT] Got: ");
-  Serial.println(payload_str);
+  LOG_INFO("payload_str=%s.", payload_str);
 
   auto error = deserializeJson(jsonDoc, payload_str);
   if (error) {
-    Serial.printf("deserializeJson() failed with code %s\n", error.c_str());
+    LOG_ERROR("deserializeJson() failed with code %s\n", error.c_str());
     return;
   }
 
