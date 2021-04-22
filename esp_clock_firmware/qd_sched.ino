@@ -1,11 +1,14 @@
 #include "qd_sched.h"
 
 // The latest millis() value when loop() was entered
-unsigned long entry_time;
+static unsigned long entry_time;
 // Elapsed time (time spent doing stuff) during the last loop() run
-unsigned long elapsed_time;
+static unsigned long elapsed_time;
+// Used for computing CPU load more accurately
+static unsigned long CPU_time = 0;
+
 // Tasks to run
-task_t tasks[SCHED_NUM_TASKS] = {0};
+static task_t tasks[SCHED_NUM_TASKS] = {0};
 
 size_t sched_put_task(void (*taskFunction)(void), unsigned long rate)
 {
@@ -36,7 +39,7 @@ size_t sched_put_taskID(size_t id, void (*taskFunction)(void), unsigned long rat
 
 uint8_t sched_get_CPU_usage()
 {
-  return (100*elapsed_time)/SCHED_TICK_MS;
+  return (100*CPU_time)/SCHED_TICK_MS;
 }
 
 void loop() {
@@ -52,7 +55,8 @@ void loop() {
   }
   
   elapsed_time = millis() - entry_time;
- 
+  CPU_time = (CPU_time + elapsed_time)/2; // just for debug
+  
   // sleep until the next full tick
   delay(SCHED_TICK_MS - (elapsed_time % SCHED_TICK_MS));
 }
