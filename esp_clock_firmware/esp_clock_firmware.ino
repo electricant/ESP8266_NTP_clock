@@ -95,16 +95,18 @@ void backlightTask() {
   // Keep track of the backlight. When 0 the backlight is turned off.
   // Static to keep the state between invocations
   static byte backlightTimer = 0;
+  uint16_t ambientLight = analogRead(A0);
 
-  if (backlightTimer == 0)
-    set_LCD_backlight(false, 0);
-  else
+  if (digitalRead(BACKLIGHT_BUTTON) == 0) 
+    backlightTimer = BACKLIGHT_DURATION_TICKS + 1;
+ 
+  if (backlightTimer > 0) {
+    set_LCD_backlight(true, 0); // set display backlight to minimum brightness
     backlightTimer--;
-  
-  if (digitalRead(BACKLIGHT_BUTTON) == 0)
-  {
-    set_LCD_backlight(true, 0); // set display to minimum brightness
-    backlightTimer = BACKLIGHT_DURATION_TICKS;
+  } else if (ambientLight > BACKLIGHT_ON_THRESHOLD) {
+    set_LCD_backlight(true, 0);
+  } else if ((backlightTimer == 0) && (ambientLight < (BACKLIGHT_ON_THRESHOLD - BACKLIGHT_DEADBAND))) {
+    set_LCD_backlight(false, 0); // set display backlight off
   }
 }
 

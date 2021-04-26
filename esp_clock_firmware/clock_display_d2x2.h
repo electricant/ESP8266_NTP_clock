@@ -17,6 +17,19 @@
 #include <pins_arduino.h>
 
 /*
+ * LCD pins definition. As seen in the schematic!
+ */
+#define LCD_RS D1
+#define LCD_E  D2
+#define LCD_D4 D5
+#define LCD_D5 D6
+#define LCD_D6 D7
+#define LCD_D7 D8
+
+// Global LCD instance
+LiquidCrystal lcd = LiquidCrystal(LCD_RS, LCD_E, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
+
+/*
  * Custom chars
  */
 byte chr0[] = {
@@ -112,10 +125,6 @@ byte number_chars[10][4] = {
   {5,  6,  2, 3}, // 8
   {5,  6,  7, 3}  // 9 
 };
-
-// Global LCD instance definition
-const int rs = D2, en = D1, d4 = D8, d5 = D7, d6 = D6, d7 = D5;
-LiquidCrystal lcd = LiquidCrystal(rs, en, d4, d5, d6, d7);
 
 /*
  * Initialize the LCD display

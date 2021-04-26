@@ -53,5 +53,11 @@
 // Backlight duration ticks (the effective backlight duration is BACKLIGHT_DURATION_TICKS*BACKLIGHT_UPDATE_MS)
 #define BACKLIGHT_DURATION_TICKS 10
 
+// ADC reading value above which the backlight is turned on
+#define BACKLIGHT_ON_THRESHOLD 845
+
+// Turn off the backlight when the ADC reading is below THRESHOLD - DEADBAND
+#define BACKLIGHT_DEADBAND 10
+
 // MQTT update rate is defined by as half MQTT_KEEPALIVE value to be on the safe side
 #define MQTT_UPDATE_MS ((MQTT_KEEPALIVE / 2)*1000)

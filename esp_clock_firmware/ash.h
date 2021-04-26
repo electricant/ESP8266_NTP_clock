@@ -20,8 +20,13 @@ struct ash_cmd {
 /*
  * This function runs repeatedly to parse user input
  */
- void ashTask(void);
- 
+void ashTask(void);
+
+/*
+ * Print current ADC reading
+ */
+int analogread_cb(const char* param);
+
 /*
  * Implements a simple version of the echo command, printing param to the serial port
  */

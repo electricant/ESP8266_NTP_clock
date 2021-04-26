@@ -36,5 +36,6 @@ inline void set_LCD_backlight(bool state, int brightness)
     brightness = min(brightness, MAX_BACKLIGHT_BRIGHTNESS);
     brightness = max(brightness, MIN_BACKLIGHT_BRIGHTNESS);
     analogWrite(BACKLIGHT_PIN, brightness);
+    //digitalWrite(BACKLIGHT_PIN, 1);
   }
 }

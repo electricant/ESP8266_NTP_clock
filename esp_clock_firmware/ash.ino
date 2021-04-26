@@ -11,6 +11,7 @@
  */
  struct ash_cmd commands[] = {
   {.cmd_name = "", .cmd_func = &noop_cb},
+  {.cmd_name = "analogread", .cmd_func = &analogread_cb},
   {.cmd_name = "cat", .cmd_func = &cat_cb},
   {.cmd_name = "echo", .cmd_func = &echo_cb},
   {.cmd_name = "help", .cmd_func = &help_cb},
@@ -67,6 +68,11 @@ void ashTask(void)
 
     showPrompt = true;    
   }
+}
+
+int analogread_cb(const char* param)
+{
+  Serial.println(analogRead(A0));
 }
 
 int echo_cb(const char* param)
