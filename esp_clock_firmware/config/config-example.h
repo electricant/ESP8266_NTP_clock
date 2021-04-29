@@ -23,7 +23,6 @@
 #define MQTT_PORT 1883
 #define MQTT_TOPIC "path/to/topic"
 #define MQTT_CLIENT_ID WIFI_HOSTNAME
-#define MQTT_BUF_SIZE 50
 
 /*
  * NTP and clock related settings.
@@ -58,6 +57,9 @@
 
 // Turn off the backlight when the ADC reading is below THRESHOLD - DEADBAND
 #define BACKLIGHT_DEADBAND 10
+
+// Backlight brightness value when on (must be between 0 and 1023)
+#define BACKLIGHT_BRIGHTNESS 256
 
 // MQTT update rate is defined by as half MQTT_KEEPALIVE value to be on the safe side
 #define MQTT_UPDATE_MS ((MQTT_KEEPALIVE / 2)*1000)

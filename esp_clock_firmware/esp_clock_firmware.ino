@@ -15,10 +15,27 @@
 
 #include "qd_sched.h"
 #include "clock_display_d2x2.h"
-#include "d1_gpio_utils.h"
 #include "ash.h"
 #include "alogger.h"
 #include "config/config.h"
+
+/*
+ * Macros for hardware configuration.
+ * 
+ * See 'clock_display_d2x2.h' for macros defining where the display is connected
+ */
+// Input pin to enable backlight when pressed
+#define BACKLIGHT_BUTTON D3
+// Output pin to be used as LCD backlight control
+#define BACKLIGHT_PIN D0
+
+/* 
+ * The controls for the builtin LED are reversed.
+ * When the pin is set to HIGH the LED is off and vice-versa.
+ * Those two macors make it easy to set the LED state appropriately.
+ */
+#define LED_BUILTIN_ON  0
+#define LED_BUILTIN_OFF 1
 
 // A UDP instance to let us send and receive packets over UDP
 WiFiUDP udp;
@@ -33,6 +50,21 @@ PubSubClient mqttClient(wifiClient);
 
 // last temperature and humidity readings
 float temperature, humidity;
+
+/**
+ * Initialize the various GPIOs
+ */ 
+void gpios_init()
+{
+  // initialize onboard LED as output
+  pinMode(LED_BUILTIN, OUTPUT);
+  // set BACKLIGHT_BUTTON pin as input pullup to detect button press
+  pinMode(BACKLIGHT_BUTTON, INPUT_PULLUP);
+  // also set the backlight pin as output
+  pinMode(BACKLIGHT_PIN, OUTPUT);
+  // set PWM frequency to minimum to lower CPU load
+  analogWriteFreq(100);
+}
 
 void setup() {
   // Light sleep can be used only if the WiFi is in STA mode
@@ -51,8 +83,7 @@ void setup() {
   gpios_init();
 
   // connect to the wifi network
-  builtin_LED_on();
-
+  digitalWrite(LED_BUILTIN, LED_BUILTIN_ON);
   Serial.print("[WiFi] Connecting to ");
   Serial.print(WIFI_SSID);
 
@@ -68,7 +99,7 @@ void setup() {
   Serial.print("\n[Wifi] Connected. RSSI = ");
   Serial.print(WiFi.RSSI());
   Serial.println(" dBm");
-  builtin_LED_off();
+  digitalWrite(LED_BUILTIN, LED_BUILTIN_ON);
 
   // setup timeLib to use NTP
   setSyncInterval(NTP_SYNC_INTERVAL_M * 60); // seconds see: https://github.com/PaulStoffregen/Time
@@ -89,24 +120,62 @@ void setup() {
 }
 
 /**
- * Function to control the backlight
+ * Function to control the backlight.
+ * 
+ * It uses a state machine that reads two inputs: the backlight buttona and the ambient light.
+ * backlight_state_t describes the state the machine is.
+ * Depending on the state the backlight can be either on or off.
  */
+ enum backlight_state_t {
+  BKL_IDLE,   // backlight idle (off)
+  BKL_MANUAL, // backlight turned on manually (button pressed)
+  BKL_AUTO    // backlight turned on automatically (tiriggered by the ambient light sensor)
+};
+typedef enum backlight_state_t backlight_state_t;
+
 void backlightTask() {
-  // Keep track of the backlight. When 0 the backlight is turned off.
-  // Static to keep the state between invocations
+  // keep track of the current state (start in idle mode)
+  static backlight_state_t state = BKL_IDLE;
+  // used to keep the backlight on for some time after the button has been pressed
   static byte backlightTimer = 0;
+  // current ambient light reading
   uint16_t ambientLight = analogRead(A0);
 
-  if (digitalRead(BACKLIGHT_BUTTON) == 0) 
-    backlightTimer = BACKLIGHT_DURATION_TICKS + 1;
- 
-  if (backlightTimer > 0) {
-    set_LCD_backlight(true, 0); // set display backlight to minimum brightness
-    backlightTimer--;
-  } else if (ambientLight > BACKLIGHT_ON_THRESHOLD) {
-    set_LCD_backlight(true, 0);
-  } else if ((backlightTimer == 0) && (ambientLight < (BACKLIGHT_ON_THRESHOLD - BACKLIGHT_DEADBAND))) {
-    set_LCD_backlight(false, 0); // set display backlight off
+  switch (state) {
+    case BKL_IDLE:
+      digitalWrite(BACKLIGHT_PIN, 0);
+      
+      if (digitalRead(BACKLIGHT_BUTTON) == 0) {
+        state = BKL_MANUAL;
+        backlightTimer = BACKLIGHT_DURATION_TICKS;
+        LOG_INFO("Moving to state %i. Reason: backlight button press.", state);
+      } else if (ambientLight > BACKLIGHT_ON_THRESHOLD) {
+        state = BKL_AUTO;
+        LOG_INFO("Moving to state %i. Reason: ambient light.", state);
+      }
+      break;
+    
+    case BKL_MANUAL:
+      analogWrite(BACKLIGHT_PIN, BACKLIGHT_BRIGHTNESS);
+
+      if (backlightTimer == 0) {
+        state = BKL_IDLE;
+        LOG_INFO("Moving to state %i. Reason: backlight timer expired.", state);
+      } else if (digitalRead(BACKLIGHT_BUTTON) == 0)
+        backlightTimer = BACKLIGHT_DURATION_TICKS;
+      else if (backlightTimer > 0)
+        backlightTimer--;
+      
+      break;
+    
+    case BKL_AUTO:
+      analogWrite(BACKLIGHT_PIN, BACKLIGHT_BRIGHTNESS);
+
+      if (ambientLight < (BACKLIGHT_ON_THRESHOLD - BACKLIGHT_DEADBAND)) {
+        state = BKL_IDLE;
+        LOG_INFO("Moving to state %i. Reason: ambient light.", state);
+      }
+      break;
   }
 }
 
@@ -191,7 +260,7 @@ time_t getNTPtime()
 {
   time_t curr_time;
 
-  builtin_LED_on();
+  digitalWrite(LED_BUILTIN, LED_BUILTIN_ON);
 
   LOG_INFO("Querying %s", NTP_SERVER);
 
@@ -208,24 +277,21 @@ time_t getNTPtime()
     LOG_INFO("Time synchronized: %lu", curr_time);
   }
 
-  builtin_LED_off();
+  digitalWrite(LED_BUILTIN, LED_BUILTIN_OFF);
   return curr_time;
 }
 
 /**
  * React to MQTT subscribed topic updates
  */
-void mqttSubCallback(char* topic, byte* payload, unsigned int len)
+void mqttSubCallback(char* topic, byte* payload, unsigned int payloadLen)
 {
-  char payload_str[MQTT_BUF_SIZE];
-  StaticJsonDocument<MQTT_BUF_SIZE> jsonDoc;
+  char payload_str[payloadLen];
+  DynamicJsonDocument jsonDoc(payloadLen);
 
-  builtin_LED_on();
-
-  if(len > MQTT_BUF_SIZE)
-    len = MQTT_BUF_SIZE;
+  digitalWrite(LED_BUILTIN, LED_BUILTIN_ON);
   
-  snprintf(payload_str, len+1, "%s", payload);
+  snprintf(payload_str, payloadLen +1, "%s", payload);
   
   LOG_INFO("payload_str=%s.", payload_str);
 
@@ -238,5 +304,5 @@ void mqttSubCallback(char* topic, byte* payload, unsigned int len)
   temperature = jsonDoc["temp"];
   humidity = jsonDoc["rhum"];
 
-  builtin_LED_off();
+  digitalWrite(LED_BUILTIN, LED_BUILTIN_OFF);
 }
