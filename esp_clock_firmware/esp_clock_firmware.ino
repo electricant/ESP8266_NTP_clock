@@ -298,11 +298,12 @@ void mqttSubCallback(char* topic, byte* payload, unsigned int payloadLen)
   auto error = deserializeJson(jsonDoc, payload_str);
   if (error) {
     LOG_ERROR("deserializeJson() failed with code %s\n", error.c_str());
-    return;
+    goto endf;
   }
 
   temperature = jsonDoc["temp"];
   humidity = jsonDoc["rhum"];
 
+endf:
   digitalWrite(LED_BUILTIN, LED_BUILTIN_OFF);
 }
