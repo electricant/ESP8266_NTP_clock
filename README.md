@@ -12,6 +12,7 @@ open-ended project this list may grow. Never settle!
    morning.
  * Backlight support either triggered by a button or automating using a
    photoresistor
+ * DST support without requiring an external library
 
 ## Firmware
 
@@ -22,9 +23,6 @@ Required libraries:
 
 The code uses a local, improved version of the EasyNTPClient library. It is
 available as a git submodule.
-
-Known bugs:
- * DST correction is not properly implemented. It just adds a fixed offset of 1h
 
 ## PCB/Mechanical assembly
 
