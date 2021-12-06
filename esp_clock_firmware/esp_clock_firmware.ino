@@ -15,7 +15,7 @@
 
 #include "qd_sched.h"
 #include "clock_display_d2x2.h"
-#include "ash.h"
+//#include "ash.h"
 #include "alogger.h"
 #include "config/config.h"
 
@@ -113,7 +113,7 @@ void setup() {
   sched_put_task(&backlightTask, BACKLIGHT_UPDATE_MS);
   sched_put_task(&screenUpdateTask, SCREEN_UPDATE_MS);
   sched_put_task(&mqttLoopTask, MQTT_UPDATE_MS);
-  sched_put_task(&ashTask, 1000);
+  //sched_put_task(&ashTask, 1000);
   
   // done loading
   lcd.noBlink();
@@ -126,7 +126,7 @@ void setup() {
  * backlight_state_t describes the state the machine is.
  * Depending on the state the backlight can be either on or off.
  */
- enum backlight_state_t {
+enum backlight_state_t {
   BKL_IDLE,   // backlight idle (off)
   BKL_MANUAL, // backlight turned on manually (button pressed)
   BKL_AUTO    // backlight turned on automatically (tiriggered by the ambient light sensor)
@@ -284,18 +284,19 @@ time_t getNTPtime()
 /**
  * React to MQTT subscribed topic updates
  */
-void mqttSubCallback(char* topic, byte* payload, unsigned int payloadLen)
+void mqttSubCallback(char* topic, byte* payload, size_t payloadLen)
 {
-  char payload_str[payloadLen];
+  LOG_ERROR("payload_length: %u", payloadLen);
+  //char payload_str[payloadLen + 1]; // +1 for null terminator char
   DynamicJsonDocument jsonDoc(payloadLen);
 
   digitalWrite(LED_BUILTIN, LED_BUILTIN_ON);
   
-  snprintf(payload_str, payloadLen +1, "%s", payload);
+ // snprintf(payload_str, payloadLen +1, "%s", payload);
   
-  LOG_INFO("payload_str=%s.", payload_str);
+ // LOG_INFO("payload_str=%s.", payload_str);
 
-  auto error = deserializeJson(jsonDoc, payload_str);
+  auto error = deserializeJson(jsonDoc, payload);
   if (error) {
     LOG_ERROR("deserializeJson() failed with code %s\n", error.c_str());
     goto endf;

@@ -12,12 +12,12 @@
  struct ash_cmd commands[] = {
   {.cmd_name = "", .cmd_func = &noop_cb},
   {.cmd_name = "analogread", .cmd_func = &analogread_cb},
-  {.cmd_name = "cat", .cmd_func = &cat_cb},
+//  {.cmd_name = "cat", .cmd_func = &cat_cb},
   {.cmd_name = "echo", .cmd_func = &echo_cb},
   {.cmd_name = "help", .cmd_func = &help_cb},
   {.cmd_name = "logcat", .cmd_func = &logcat_cb},
-  {.cmd_name = "ls", .cmd_func = &ls_cb},
-  {.cmd_name = "shutdown", .cmd_func = &shutdown_cb},
+//  {.cmd_name = "ls", .cmd_func = &ls_cb},
+//  {.cmd_name = "shutdown", .cmd_func = &shutdown_cb},
   {.cmd_name = "uptime", .cmd_func = &uptime_cb},
   {.cmd_name = "wifi-info", .cmd_func = &wifi_info_cb},
   {.cmd_name = NULL, .cmd_func = &invalid_command_cb} // this should always be the last one
@@ -73,11 +73,13 @@ void ashTask(void)
 int analogread_cb(const char* param)
 {
   Serial.println(analogRead(A0));
+  return 0;
 }
 
 int echo_cb(const char* param)
 {
   Serial.println(param);
+  return 0;
 }
 
 int help_cb(const char* param)
@@ -88,6 +90,7 @@ int help_cb(const char* param)
     if (strlen(cmd->cmd_name))
       Serial.printf("\t%s\n", cmd->cmd_name);
   }
+  return 0;
 }
 
 int uptime_cb(const char* param)
@@ -96,6 +99,7 @@ int uptime_cb(const char* param)
   Serial.print(millis());
   Serial.print(" ms, load %: ");
   Serial.println(sched_get_CPU_usage());
+  return 0;
 }
 
 int wifi_info_cb(const char* param)
@@ -109,6 +113,7 @@ int wifi_info_cb(const char* param)
   Serial.print(WiFi.localIP());
   Serial.print(" netmask: ");
   Serial.println(WiFi.subnetMask());
+  return 0;
 }
 
 int shutdown_cb(const char* param)
@@ -124,6 +129,7 @@ int shutdown_cb(const char* param)
 
 err:
   Serial.println("Parameters should be '-r' to reboot or '-h' to halt.");
+  return 1;
 }
 
 int ls_cb(const char* param)
@@ -146,6 +152,7 @@ int ls_cb(const char* param)
     else
       Serial.println(fname);
   }
+  return 0;
 }
 
 int cat_cb(const char* param)
@@ -166,9 +173,11 @@ int cat_cb(const char* param)
   }
 
   fl.close();
+  return 0;
 }
 
 int invalid_command_cb(const char* param)
 {
   Serial.println("Command not recognized. Insert 'help' for a list of available commands.");
+  return 0;
 }

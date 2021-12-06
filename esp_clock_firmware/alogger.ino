@@ -29,4 +29,5 @@ int logcat_cb(const char* param)
     if (strlen(logbuf[index]) > 0)
       Serial.println(logbuf[index]);
    }
+   return 0;
 }

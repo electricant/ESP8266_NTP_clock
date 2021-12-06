@@ -14,7 +14,7 @@
  */
 #define LINE_LENGTH 80
 // using power of 2 makes the logger faster
-#define NUM_LINES 128
+#define NUM_LINES 64
 
 // Facility used for logging info messages
 #define LOG_INFO(fmt, ...) logbuf_put("[%lu,%s(),%lu]: " fmt, millis(), __func__, __LINE__, ##__VA_ARGS__)
