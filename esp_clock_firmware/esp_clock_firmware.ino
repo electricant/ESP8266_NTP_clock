@@ -113,7 +113,7 @@ void setup() {
   sched_put_task(&backlightTask, BACKLIGHT_UPDATE_MS);
   sched_put_task(&screenUpdateTask, SCREEN_UPDATE_MS);
   sched_put_task(&mqttLoopTask, MQTT_UPDATE_MS);
-  //sched_put_task(&ashTask, 1000);
+  sched_put_task(&ashTask, 1000);
   
   // done loading
   lcd.noBlink();
@@ -286,17 +286,15 @@ time_t getNTPtime()
  */
 void mqttSubCallback(char* topic, byte* payload, size_t payloadLen)
 {
-  LOG_ERROR("payload_length: %u", payloadLen);
-  //char payload_str[payloadLen + 1]; // +1 for null terminator char
-  DynamicJsonDocument jsonDoc(payloadLen);
+  // The input JSON has 4 objets and no arrays.
+  // Moreover, since the input is char* no string copy is needed.
+  // See: https://arduinojson.org/v6/assistant/
+  //      https://arduinojson.org/v6/how-to/determine-the-capacity-of-the-jsondocument/
+  StaticJsonDocument<JSON_OBJECT_SIZE(4)> jsonDoc;
 
   digitalWrite(LED_BUILTIN, LED_BUILTIN_ON);
-  
- // snprintf(payload_str, payloadLen +1, "%s", payload);
-  
- // LOG_INFO("payload_str=%s.", payload_str);
 
-  auto error = deserializeJson(jsonDoc, payload);
+  auto error = deserializeJson(jsonDoc, (char*)payload, payloadLen);
   if (error) {
     LOG_ERROR("deserializeJson() failed with code %s\n", error.c_str());
     goto endf;
