@@ -12,16 +12,18 @@
  * NUM_LINES sets the maximum number of lines held in the log buffer. 
  *           The buffer is circular and older log entries will be deleted.
  */
-#define LINE_LENGTH 80
+#define LINE_LENGTH 100
 // using power of 2 makes the logger faster
-#define NUM_LINES (1 << 8) // 2^8 = 256
+#define NUM_LINES (1 << 7) // 2^7 = 128
 
 // Facility used for logging info messages
 #define LOG_INFO(fmt, ...) logbuf_put("[%lu,%s(),%lu]: " fmt, millis(), __func__, __LINE__, ##__VA_ARGS__)
 
 // Facility used for logging error messages.
 // To be used for showstopper errors that should never happen
-#define LOG_ERROR(fmt, ...) Serial.printf("ERROR [%lu,%s(),%lu]: " fmt "\n", millis(), __func__, __LINE__, ##__VA_ARGS__)
+#define LOG_ERROR(fmt, ...) \
+  do { Serial.printf("ERROR [%lu,%s(),%lu]: " fmt "\n", millis(), __func__, __LINE__, ##__VA_ARGS__); \
+       logbuf_put("ERROR [%lu,%s(),%lu]: " fmt "\n", millis(), __func__, __LINE__, ##__VA_ARGS__); }while(0)
 
 /*
  * Put a string into the (circular) buffer

@@ -302,7 +302,8 @@ void mqttSubCallback(char* topic, byte* payload, size_t payloadLen)
 
   temperature = jsonDoc["temp"];
   humidity = jsonDoc["rhum"];
-
+  LOG_INFO("%s -> temp: %.1f rhum: %.1f", topic, temperature, humidity);
+  
 endf:
   digitalWrite(LED_BUILTIN, LED_BUILTIN_OFF);
 }
