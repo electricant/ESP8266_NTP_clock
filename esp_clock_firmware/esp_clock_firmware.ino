@@ -113,7 +113,7 @@ void setup() {
   sched_put_task(&backlightTask, BACKLIGHT_UPDATE_MS, true);
   sched_put_task(&screenUpdateTask, SCREEN_UPDATE_MS, true);
   sched_put_task(&mqttLoopTask, MQTT_UPDATE_MS, true);
-  sched_put_task(&ashTask, 1000, true);
+  sched_put_task(&ashTask, 1000, false);
   
   // done loading
   lcd.noBlink();
@@ -189,7 +189,7 @@ void screenUpdateTask() {
   /* compute daylight time offset. An hour should be added if date between:
    * last Sunday of March 01:00UTC to last Sunday of October 01:00UTC
    * 
-   * This algorithm is based on LUT. Let's ignore leap years for a moment.
+   * This algorithm is based on a LUT. Let's ignore leap years for a moment.
    * Since 365 % 7 = 1, given a reference date, the date for the following year goes back one day. 
    * For example, the last sunday of march is: Sun 28 March 2021 -> Sun 27 March 2022.
    * March and October have both 31 days. So, the last sunday can happen between the 25th and the 31st.
@@ -260,8 +260,6 @@ time_t getNTPtime()
 {
   time_t curr_time;
 
-  digitalWrite(LED_BUILTIN, LED_BUILTIN_ON);
-
   LOG_INFO("Querying %s", NTP_SERVER);
 
   curr_time = ntpClient.getUnixTime();
@@ -277,7 +275,6 @@ time_t getNTPtime()
     LOG_INFO("Time synchronized: %lu", curr_time);
   }
 
-  digitalWrite(LED_BUILTIN, LED_BUILTIN_OFF);
   return curr_time;
 }
 
@@ -292,18 +289,13 @@ void mqttSubCallback(char* topic, byte* payload, size_t payloadLen)
   //      https://arduinojson.org/v6/how-to/determine-the-capacity-of-the-jsondocument/
   StaticJsonDocument<JSON_OBJECT_SIZE(4)> jsonDoc;
 
-  digitalWrite(LED_BUILTIN, LED_BUILTIN_ON);
-
   auto error = deserializeJson(jsonDoc, (char*)payload, payloadLen);
   if (error) {
     LOG_ERROR("deserializeJson() failed with code %s\n", error.c_str());
-    goto endf;
+    return;
   }
 
   temperature = jsonDoc["temp"];
   humidity = jsonDoc["rhum"];
   LOG_INFO("%s -> temp: %.1f rhum: %.1f", topic, temperature, humidity);
-  
-endf:
-  digitalWrite(LED_BUILTIN, LED_BUILTIN_OFF);
 }
