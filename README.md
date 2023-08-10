@@ -20,6 +20,7 @@ Required libraries:
  * PubSubClient
  * TimeLib
  * ArduinoJson
+ * [qd_sched](https://github.com/electricant/qd_sched) - simple scheduler for repetitive tasks
 
 The code uses a local, improved version of the EasyNTPClient library. It is
 available as a git submodule.

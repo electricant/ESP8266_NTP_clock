@@ -97,8 +97,7 @@ int uptime_cb(const char* param)
 {
   Serial.print("up ");
   Serial.print(millis());
-  Serial.print(" ms, load %: ");
-  Serial.println(sched_get_CPU_usage());
+  Serial.println(" ms.");
   return 0;
 }
 

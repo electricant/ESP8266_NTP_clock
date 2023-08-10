@@ -11,9 +11,9 @@
 #include "EasyNTPClient/src/EasyNTPClient.h"
 #include "EasyNTPClient/src/EasyNTPClient.cpp"
 #include <TimeLib.h>
+#include <qd_sched.h>
 #include <ArduinoJson.h>
 
-#include "qd_sched.h"
 #include "clock_display_d2x2.h"
 //#include "ash.h"
 #include "alogger.h"
@@ -110,10 +110,10 @@ void setup() {
   mqttClient.setCallback(mqttSubCallback);
 
   // setup tasks
-  sched_put_task(&backlightTask, BACKLIGHT_UPDATE_MS);
-  sched_put_task(&screenUpdateTask, SCREEN_UPDATE_MS);
-  sched_put_task(&mqttLoopTask, MQTT_UPDATE_MS);
-  sched_put_task(&ashTask, 1000);
+  sched_put_task(&backlightTask, BACKLIGHT_UPDATE_MS, true);
+  sched_put_task(&screenUpdateTask, SCREEN_UPDATE_MS, true);
+  sched_put_task(&mqttLoopTask, MQTT_UPDATE_MS, true);
+  sched_put_task(&ashTask, 1000, true);
   
   // done loading
   lcd.noBlink();
