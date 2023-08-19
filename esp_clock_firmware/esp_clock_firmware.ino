@@ -15,7 +15,7 @@
 #include <ArduinoJson.h>
 
 #include "clock_display_d2x2.h"
-//#include "ash.h"
+#include "ash.h"
 #include "alogger.h"
 #include "config/config.h"
 
@@ -108,6 +108,8 @@ void setup() {
   // Initialize MQTT
   mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
   mqttClient.setCallback(mqttSubCallback);
+  // set MQTT keepalive value to allow for a safety margin
+  mqttClient.setKeepAlive(2*MQTT_UPDATE_MS/1000);
 
   // setup tasks
   sched_put_task(&backlightTask, BACKLIGHT_UPDATE_MS, true);
@@ -117,6 +119,7 @@ void setup() {
   
   // done loading
   lcd.noBlink();
+  digitalWrite(LED_BUILTIN, LED_BUILTIN_OFF);
 }
 
 /**
