@@ -41,8 +41,8 @@
 WiFiUDP udp;
 
 // EasyNTPClient instance to fetch the current NTP time
-#define OFFSET_FROM_GMT_S ((OFFSET_FROM_GMT_H*60*60)+(OFFSET_FROM_GMT_M*60))
-EasyNTPClient ntpClient(udp, NTP_SERVER, OFFSET_FROM_GMT_S);
+#define OFFSET_FROM_UTC_S ((OFFSET_FROM_UTC_H*60*60)+(OFFSET_FROM_UTC_M*60))
+EasyNTPClient ntpClient(udp, NTP_SERVER, OFFSET_FROM_UTC_S);
 
 // MQTT client to receive temperature updates
 WiFiClient wifiClient;
@@ -215,15 +215,15 @@ void screenUpdateTask() {
   static const uint16_t oct_yr = 2001; // reference year for October
 
   // get last sunday of March
-  uint8_t mar_ls = dst_lut[(year() - mar_yr)%sizeof(dst_lut)];
+  uint8_t mar_last_sun = dst_lut[(year() - mar_yr)%sizeof(dst_lut)];
   // and October
-  uint8_t oct_ls = dst_lut[(year() - oct_yr)%sizeof(dst_lut)];
+  uint8_t oct_last_sun = dst_lut[(year() - oct_yr)%sizeof(dst_lut)];
 
-  if ((month() > 3) && (month() < 11))
+  if ((month() > 3) && (month() < 10))
     dst_offset = 1;
-  else if ((month() == 3) && (day() >= mar_ls))
+  if ((month() == 3) && (day() >= mar_last_sun))
     dst_offset = 1;
-  else if ((month() == 10) && (day() <= oct_ls))
+  else if ((month() == 10) && (day() < oct_last_sun))
     dst_offset = 1;
 #endif 
 

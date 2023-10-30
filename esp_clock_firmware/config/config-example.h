@@ -12,7 +12,7 @@
 
 /*
  * MQTT settings.
- * 
+ *
  * The server the clock will connect to is MQTT_BROKER:MQTT_PORT.
  * To obtain temperature and humidity it will subscribe to MQTT_TOPIC using MQTT_CLIENT_ID as ID.
  * By default the ID is the same as the hostname.
@@ -26,17 +26,18 @@
 
 /*
  * NTP and clock related settings.
- * 
- * The ESP8266 will connect to NTP_SERVER on boot and once every NTP_SYNC_INTERVAL minutes, asking for time.
- * NTP uses an epoch of January 1, 1900 referenced to the GMT.
- * OFFSET_FROM_GMT_H and OFFSET_FROM_GMT_M control the offset to be added to GMT to obtain the local time,
- * as hours and minutes respectively.
+ *
+ * The ESP8266 connects to NTP_SERVER on boot and asks for the time once every
+ * NTP_SYNC_INTERVAL minutes.
+ * Since NTP time is referenced to UTC, OFFSET_FROM_UTC_H and OFFSET_FROM_UTC_M
+ * control the offset to be added to (or subtracted from if negative) UTC to
+ * obtain the local time, as hours and minutes respectively.
  */
 #define NTP_SERVER "ntp.example.com"
 #define NTP_SYNC_INTERVAL_M (4*60)    // 4 hours
 
-#define OFFSET_FROM_GMT_H 0
-#define OFFSET_FROM_GMT_M 0
+#define OFFSET_FROM_UTC_H 0
+#define OFFSET_FROM_UTC_M 0
 // if defined correct the time information taking DST into account
 #define ENABLE_DST
 
